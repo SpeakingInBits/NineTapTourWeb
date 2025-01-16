@@ -4,6 +4,9 @@ namespace NineTapTourWeb.Models;
 
 public static class IdentityHelper
 {
+    /* Role Name */
+    public const string AdminRole = "Admin";
+
     internal static void ConfigureIdentityOptions(IdentityOptions options)
     {
         // Password settings
@@ -27,6 +30,63 @@ public static class IdentityHelper
         options.SignIn.RequireConfirmedEmail = false;
         options.SignIn.RequireConfirmedPhoneNumber = false;
         options.SignIn.RequireConfirmedAccount = false;
+    }
+
+    internal static async Task CreateDefaultAdmin(IServiceProvider service)
+    {
+        using (var scope = service.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+
+            string adminEmail = "admin@admin.com";
+            string adminPassword = "TheAdminIsHere";
+
+            // Check if the admin user already exists
+            var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            if (adminUser == null)
+            {
+                // Create the admin user
+                adminUser = new ApplicationUser
+                {
+                    UserName = "Admin",
+                    Email = adminEmail
+                };
+                var result = await userManager.CreateAsync(adminUser, adminPassword);
+                if (result.Succeeded)
+                {
+                    // Ensure the admin role exists
+                    if (!await roleManager.RoleExistsAsync(AdminRole))
+                    {
+                        await roleManager.CreateAsync(new ApplicationRole(AdminRole));
+                    }
+
+                    // Add the user to the admin role
+                    await userManager.AddToRoleAsync(adminUser, AdminRole);
+                }
+            }
+        }
+    }
+
+    internal static async Task SeedRoles(IServiceProvider service)
+    {
+        using (var scope = service.CreateScope())
+        {
+            RoleManager<ApplicationRole> roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+
+            string[] roleNames = { AdminRole };
+            IdentityResult roleResult;
+
+            foreach (var roleName in roleNames)
+            {
+                var roleExist = await roleManager.RoleExistsAsync(roleName);
+                if (!roleExist)
+                {
+                    // Create the roles and seed them to the database
+                    roleResult = await roleManager.CreateAsync(new ApplicationRole(roleName));
+                }
+            }
+        }
     }
 }
 

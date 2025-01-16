@@ -45,4 +45,9 @@ app.MapControllerRoute(
 app.MapRazorPages()
    .WithStaticAssets();
 
+#if DEBUG
+await IdentityHelper.SeedRoles(app.Services); 
+await IdentityHelper.CreateDefaultAdmin(app.Services);
+#endif
+
 app.Run();
