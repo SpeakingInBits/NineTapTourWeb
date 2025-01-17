@@ -10,5 +10,7 @@ namespace NineTapTourWeb.Data
             : base(options)
         {
         }
+
+        public DbSet<NineTapRegion> Regions { get; set; }
     }
 }
